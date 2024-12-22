@@ -129,6 +129,10 @@ public class Translation2d implements ITranslation2d<Translation2d> {
         return new Translation2d(x_ * s, y_ * s);
     }
 
+    public edu.wpi.first.math.geometry.Translation2d real(){
+        return new edu.wpi.first.math.geometry.Translation2d(x_, y_);
+    }
+
     public boolean epsilonEquals(final Translation2d other, double epsilon) {
         return Util.epsilonEquals(x(), other.x(), epsilon)
                 && Util.epsilonEquals(y(), other.y(), epsilon);

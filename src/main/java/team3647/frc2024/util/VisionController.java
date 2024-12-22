@@ -8,6 +8,9 @@ import java.util.Collections;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.littletonrobotics.junction.Logger;
+import org.photonvision.PhotonCamera;
+import org.photonvision.targeting.PhotonPipelineResult;
+
 import team3647.lib.team6328.VirtualSubsystem;
 
 public class VisionController extends VirtualSubsystem {
@@ -79,5 +82,11 @@ public class VisionController extends VirtualSubsystem {
         Logger.recordOutput(
                 "Robot/Has Pose", !new Trigger(() -> list.isEmpty()).debounce(1).getAsBoolean());
         
+    }
+
+    public static PhotonPipelineResult getLatestResult(PhotonCamera cam){
+        var list = cam.getAllUnreadResults();
+        if(list.isEmpty()) return new PhotonPipelineResult();
+        return list.get(0);
     }
 }

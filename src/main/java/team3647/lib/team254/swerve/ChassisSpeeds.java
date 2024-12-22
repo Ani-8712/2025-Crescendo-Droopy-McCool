@@ -79,6 +79,10 @@ public class ChassisSpeeds {
         return new Twist2d(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
     }
 
+    public edu.wpi.first.math.kinematics.ChassisSpeeds real(){
+        return new edu.wpi.first.math.kinematics.ChassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
+    }
+
     @Override
     public String toString() {
         return String.format(

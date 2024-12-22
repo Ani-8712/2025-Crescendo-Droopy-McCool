@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+
+import org.ironmaple.simulation.SimulatedArena;
 import org.littletonrobotics.junction.AutoLogOutputManager;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -54,11 +56,11 @@ public class Robot extends LoggedRobot {
             new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         } else {
             setUseTiming(true); // Run as fast as possible
-            String logPath =
-                    LogFileUtil
-                            .findReplayLog(); // Pull the replay log from AdvantageScope (or prompt
+            // String logPath =
+            //         LogFileUtil
+            //                 .findReplayLog(); // Pull the replay log from AdvantageScope (or prompt
             // the user)
-            Logger.setReplaySource(new WPILOGReader(logPath)); // Read replay log
+            // Logger.setReplaySource(new WPILOGReader(logPath)); // Read replay log
             Logger.addDataReceiver(new NT4Publisher());
             // Logger.addDataReceiver(
             //         new WPILOGWriter(
@@ -157,4 +159,16 @@ public class Robot extends LoggedRobot {
     /** This function is called periodically during test mode. */
     @Override
     public void testPeriodic() {}
+
+    @Override
+    public void simulationInit() {
+        SimulatedArena.getInstance().addDriveTrainSimulation(robotContainer.swerve.swerveSim);
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        SimulatedArena.getInstance().simulationPeriodic();
+        robotContainer.photonSim.system.update(robotContainer.swerve.getOdoPose());
+
+    }
 }

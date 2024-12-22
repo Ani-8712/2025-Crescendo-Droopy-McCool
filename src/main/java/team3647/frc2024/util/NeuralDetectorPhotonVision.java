@@ -9,7 +9,7 @@ public class NeuralDetectorPhotonVision extends PhotonCamera implements NeuralDe
     }
 
     public double getTX() {
-        var result = this.getLatestResult();
+        var result = VisionController.getLatestResult(this);
         if (result.hasTargets()) {
             return result.getBestTarget().getYaw();
         } else {
@@ -18,7 +18,7 @@ public class NeuralDetectorPhotonVision extends PhotonCamera implements NeuralDe
     }
 
     public double getTY() {
-        var result = this.getLatestResult();
+        var result = VisionController.getLatestResult(this);
         if (result.hasTargets()) {
             return result.getBestTarget().getPitch();
         } else {
@@ -27,7 +27,7 @@ public class NeuralDetectorPhotonVision extends PhotonCamera implements NeuralDe
     }
 
     public boolean hasTarget() {
-        var result = this.getLatestResult();
+        var result = VisionController.getLatestResult(this);
         return result.hasTargets();
     }
 }

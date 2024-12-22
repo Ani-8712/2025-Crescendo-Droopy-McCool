@@ -43,6 +43,7 @@ import team3647.frc2024.util.AutoDrive.DriveMode;
 import team3647.frc2024.util.LEDTriggers;
 import team3647.frc2024.util.NeuralDetector;
 import team3647.frc2024.util.NeuralDetectorPhotonVision;
+import team3647.frc2024.util.PhotonSim;
 import team3647.frc2024.util.RobotTracker;
 import team3647.frc2024.util.TargetingUtil;
 import team3647.frc2024.util.VisionController;
@@ -96,12 +97,14 @@ public class RobotContainer {
     }
 
     private void configAllianceChecker() {
-        allianceChecker.registerObservers(autoCommands, autoChooser, tracker);
+        allianceChecker.registerObservers(autoCommands, autoChooser, tracker, swerve);
     }
 
     private void configureButtonBindings() {
 
         ledTriggers.inOutTrigger.onTrue(mainController.rumble());
+
+        mainController.buttonA.onTrue(Commands.runOnce(() -> swerve.resetSimOdo()));
 
         coController.dPadUp.onTrue(superstructure.currentUp());
         coController.dPadDown.onTrue(superstructure.currentDown());
@@ -373,6 +376,7 @@ public class RobotContainer {
                     TunerConstants.kSpeedAt12VoltsMps,
                     SwerveDriveConstants.kRotPossibleMaxSpeedRadPerSec,
                     GlobalConstants.kDt,
+                    SwerveDriveConstants.simConfig,
                     TunerConstants.FrontLeft,
                     TunerConstants.FrontRight,
                     TunerConstants.BackLeft,
@@ -436,8 +440,8 @@ public class RobotContainer {
                     PivotConstants.nominalVoltage,
                     PivotConstants.maxKG,
                     0.02,
-                    PivotConstants.tofBack,
-                    PivotConstants.tofFront,
+                    // PivotConstants.tofBack,
+                    // PivotConstants.tofFront,
                     isIntaking);
 
     private final ClimbLeft climbLeft =
@@ -475,6 +479,8 @@ public class RobotContainer {
 
     private final ClimbCommands climbCommands = new ClimbCommands(climbLeft, climbRight);
 
+    
+
     private final PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
 
     private final DrivetrainCommands drivetrainCommands = new DrivetrainCommands(swerve);
@@ -484,6 +490,8 @@ public class RobotContainer {
 
     public final AprilTagPhotonVision backRight =
             new AprilTagPhotonVision(VisionConstants.backRight, VisionConstants.robotToBackRight);
+
+    public final PhotonSim photonSim = new PhotonSim(backLeft, backRight);
 
     public final AprilTagPhotonVision left =
             new AprilTagPhotonVision(VisionConstants.left, VisionConstants.robotToLeft);

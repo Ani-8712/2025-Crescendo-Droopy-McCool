@@ -34,7 +34,7 @@ public final class WristConstants {
 
     public static final double kInitialDegree = 131.5; // 131.5
 
-    public static final TimeOfFlight tof = new TimeOfFlight(GlobalConstants.SensorIds.wristId);
+    // public static final TimeOfFlight tof = new TimeOfFlight(GlobalConstants.SensorIds.wristId);
 
     static {
         Slot0Configs kMasterSlot0 = new Slot0Configs();

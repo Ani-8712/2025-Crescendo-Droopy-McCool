@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
@@ -173,13 +174,21 @@ public class AutoCommands implements AllianceObserver {
 
     public final AutonomousMode blueFour_S2N1N2N3;
 
+    public final AutonomousMode s15tof1;
+
+    public final Trajectory<SwerveSample> emptyTraj = new Trajectory<SwerveSample>("Empty", new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+
     public List<AutonomousMode> redAutoModes;
 
     public List<AutonomousMode> blueAutoModes;
 
+
+
     private MidlineNote lastNote = MidlineNote.ONE;
 
     Alliance color = Alliance.Red;
+
+    boolean isRed = color == Alliance.Red;
 
     private final PIDController fastXController = new PIDController(2, 0, 0);
 
@@ -328,6 +337,8 @@ public class AutoCommands implements AllianceObserver {
         this.blueFour_S2N1N2N3 =
                 new AutonomousMode(
                         four_S2N1N2N3(Alliance.Blue), getInitial(s2_to_n1), "blue close 4 s2");
+        this.s15tof1 = 
+                new AutonomousMode(s15ToF1(), getInitialAuto(s15_to_f1));
 
         redAutoModes =
                 new ArrayList<AutonomousMode>(
@@ -341,7 +352,8 @@ public class AutoCommands implements AllianceObserver {
                                 redFour_S3F5F4F3,
                                 redSix_S1F1F2N1N2N3,
                                 redTwo_S2F3,
-                                doNothing));
+                                doNothing,
+                                s15tof1));
 
         blueAutoModes =
                 new ArrayList<AutonomousMode>(
@@ -370,6 +382,7 @@ public class AutoCommands implements AllianceObserver {
     @Override
     public void onAllianceFound(Alliance color) {
         this.color = color;
+        isRed = this.color == Alliance.Red;
     }
 
     public void registerCommands() {}
@@ -777,8 +790,15 @@ public class AutoCommands implements AllianceObserver {
     }
 
     public Pose2d getInitial(String path) {
-        Trajectory traj = Choreo.loadTrajectory(path).get();
+        var maybetraj = Choreo.loadTrajectory(path);
+        if(maybetraj.isEmpty()) return new Pose2d();
+        var traj = maybetraj.get();
         return traj.getInitialPose(false);
+    }
+
+    public Pose2d getInitialAuto(String path){
+        Trajectory traj = getTraj(path);
+        return traj.getInitialPose(isRed);
     }
 
     public Pose2d getFinal(String path) {
@@ -788,6 +808,14 @@ public class AutoCommands implements AllianceObserver {
 
     public Command spinUp() {
         return Commands.parallel(superstructure.spinUp(), superstructure.feed());
+    }
+
+    public Trajectory<SwerveSample> getTraj(String path){
+        Optional<Trajectory<SwerveSample>> maybeTraj = Choreo.loadTrajectory(path);
+        if(maybeTraj.isPresent()){
+            return maybeTraj.get();
+        }
+        return emptyTraj;
     }
 
     //     public Command target() {
@@ -831,8 +859,64 @@ public class AutoCommands implements AllianceObserver {
     }
 
     public Command followChoreoPathWithOverrideFast(String path, Alliance color) {
-        Trajectory traj = Choreo.loadTrajectory(path).get();
+        Trajectory traj = getTraj(path);
         boolean mirror = color == Alliance.Red;
+        try {
+
+            PathPlannerLogging.logActivePath(PathPlannerPath.fromChoreoTrajectory(path));
+        } catch (Exception e) {
+            
+        }
+        // Logger.recordOutput("Autos/current path", path);
+        return customChoreoFolloweForOverride(
+                        traj,
+                        swerve::getOdoPose,
+                        choreoSwerveController(
+                                AutoConstants.kXController,
+                                AutoConstants.kYController,
+                                new PIDController(0, 0, 0)),
+                        (ChassisSpeeds speeds) ->
+                                swerve.drive(
+                                        (!hasPiece
+                                                        && hasTarget.getAsBoolean()
+                                                        && swerve.getOdoPose().getX()
+                                                                > (color == Alliance.Blue
+                                                                        ? 5
+                                                                        : FieldConstants
+                                                                                        .kFieldLength
+                                                                                - 8.75)
+                                                        && swerve.getOdoPose().getX()
+                                                                < (color == Alliance.Blue
+                                                                        ? 8.75
+                                                                        : FieldConstants
+                                                                                        .kFieldLength
+                                                                                - 5))
+                                                ? autoDriveVelocities.get().dx * SLOWDOWN
+                                                : speeds.vxMetersPerSecond * SLOWDOWN,
+                                        (!hasPiece
+                                                        && hasTarget.getAsBoolean()
+                                                        && swerve.getOdoPose().getX()
+                                                                > (color == Alliance.Blue
+                                                                        ? 5
+                                                                        : FieldConstants
+                                                                                        .kFieldLength
+                                                                                - 8.75)
+                                                        && swerve.getOdoPose().getX()
+                                                                < (color == Alliance.Blue
+                                                                        ? 8.75
+                                                                        : FieldConstants
+                                                                                        .kFieldLength
+                                                                                - 5))
+                                                ? autoDriveVelocities.get().dy * SLOWDOWN
+                                                : speeds.vyMetersPerSecond * SLOWDOWN,
+                                        deeTheta()),
+                        () -> mirror)
+                .andThen(Commands.runOnce(() -> swerve.drive(0, 0, 0), swerve));
+    }
+
+    public Command followChoreoPathWithOverrideFast(String path) {
+        Trajectory traj = getTraj(path);
+        boolean mirror = isRed;
         try {
             PathPlannerLogging.logActivePath(PathPlannerPath.fromChoreoTrajectory(path));
         } catch (Exception e) {
@@ -885,9 +969,13 @@ public class AutoCommands implements AllianceObserver {
                 .andThen(Commands.runOnce(() -> swerve.drive(0, 0, 0), swerve));
     }
 
+    public Command s15ToF1(){
+        return followChoreoPathWithOverrideFast(f1_to_f2);
+    }
+
     public Command followChoreoPathWithOverrideFastOnTheMove(String path, Alliance color) {
         Trajectory traj = Choreo.loadTrajectory(path).get();
-        boolean mirror = color == Alliance.Red;
+        boolean mirror = isRed;
         try {
             PathPlannerLogging.logActivePath(PathPlannerPath.fromChoreoTrajectory(path));
         } catch (Exception e) {
@@ -940,8 +1028,13 @@ public class AutoCommands implements AllianceObserver {
     }
 
     public Command followChoreoPathWithOverride(String path, Alliance color) {
-        Trajectory traj = Choreo.loadTrajectory(path).get();
-        boolean mirror = color == Alliance.Red;
+        var maybeTraj = Choreo.loadTrajectory(path);
+
+        if(maybeTraj.isEmpty()) return Commands.none();
+
+        var traj = maybeTraj.get();
+
+        boolean mirror = isRed;
         try {
             PathPlannerLogging.logActivePath(PathPlannerPath.fromChoreoTrajectory(path));
         } catch (Exception e) {
@@ -969,7 +1062,7 @@ public class AutoCommands implements AllianceObserver {
     }
 
     public Command followChoreoPathWithOverrideNoverrideFast(String path, Alliance color) {
-        Trajectory traj = Choreo.loadTrajectory(path).get();
+        Trajectory traj = getTraj(path);
         boolean mirror = color == Alliance.Red;
         try {
             PathPlannerLogging.logActivePath(PathPlannerPath.fromChoreoTrajectory(path));
@@ -1014,7 +1107,7 @@ public class AutoCommands implements AllianceObserver {
     }
 
     public Command followChoreoPathWithOverrideLongTimer(String path, Alliance color) {
-        Trajectory traj = Choreo.loadTrajectory(path).get();
+        Trajectory traj = getTraj(path);
         boolean mirror = color == Alliance.Red;
         try {
             PathPlannerLogging.logActivePath(PathPlannerPath.fromChoreoTrajectory(path));

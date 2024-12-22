@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -31,11 +32,6 @@ public class DrivetrainCommands {
         return Commands.run(
                 () -> {
                     int invert = 1;
-                    if (DriverStation.getAlliance().isPresent()) {
-                        if (DriverStation.getAlliance().get() == Alliance.Red) {
-                            invert = -1;
-                        }
-                    }
                     boolean enabeld = autoDriveEnabled.getAsBoolean();
                     DriveMode mode = autoDriveMode.get();
                     Twist2d autoDriveTwist2d = autoDriveVelocities.get();
@@ -43,6 +39,12 @@ public class DrivetrainCommands {
                     // boolean autoSteer = enableAutoSteer.getAsBoolean();
                     boolean fieldOriented = getIsFieldOriented.getAsBoolean();
                     boolean openloop = true;
+
+                    if (DriverStation.getAlliance().isPresent() && RobotBase.isSimulation()) {
+                        if (DriverStation.getAlliance().get() == Alliance.Red) {
+                            invert = -1;
+                        }
+                    }
                     double y =
                             Math.pow(ySpeedFunction.getAsDouble(), 2)
                                     * Math.signum(ySpeedFunction.getAsDouble())

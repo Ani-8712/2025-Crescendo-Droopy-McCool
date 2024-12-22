@@ -24,8 +24,8 @@ public class Pivot extends TalonFXSubsystem {
 
     private Pose3d pose = new Pose3d(new Translation3d(), new Rotation3d(0, 0, 0));
 
-    private final TimeOfFlight tofBack;
-    private final TimeOfFlight tofFront;
+    // private final TimeOfFlight tofBack;
+    // private final TimeOfFlight tofFront;
 
     public Pivot(
             TalonFX master,
@@ -39,8 +39,8 @@ public class Pivot extends TalonFXSubsystem {
             double nominalVoltage,
             double maxKG,
             double kDt,
-            TimeOfFlight tofBack,
-            TimeOfFlight tofFront,
+            // TimeOfFlight tofBack,
+            // TimeOfFlight tofFront,
             BooleanSupplier isIntaking) {
         super(master, ticksToMetersPerSec, ticksToMeters, nominalVoltage, kDt);
         super.addFollower(slave, false);
@@ -50,8 +50,8 @@ public class Pivot extends TalonFXSubsystem {
         this.maxAngleUnderStage = maxAngleUnderStage;
         this.underStage = underStage;
         this.maxKG = maxKG;
-        this.tofBack = tofBack;
-        this.tofFront = tofFront;
+        // this.tofBack = tofBack;
+        // this.tofFront = tofFront;
         this.isIntaking = isIntaking;
 
         master.getPosition().setUpdateFrequency(250);
@@ -109,19 +109,19 @@ public class Pivot extends TalonFXSubsystem {
     }
 
     public boolean backPiece() {
-        return tofBack.getRange() < 125;
+        return false;
     }
 
     public double tofBack() {
-        return tofBack.getRange();
+        return 0;
     }
 
     public boolean frontPiece() {
-        return tofFront.getRange() < 80;
+        return false;
     }
 
     public double tofFront() {
-        return tofFront.getRange();
+        return 0;
     }
 
     @Override

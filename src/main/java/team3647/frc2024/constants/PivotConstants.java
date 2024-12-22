@@ -63,10 +63,10 @@ public class PivotConstants {
     public static final Transform2d robotToPivot2d =
             new Transform2d(new Translation2d(Units.inchesToMeters(0.3), 0), new Rotation2d());
 
-    public static final TimeOfFlight tofBack =
-            new TimeOfFlight(GlobalConstants.SensorIds.pivotBackId);
-    public static final TimeOfFlight tofFront =
-            new TimeOfFlight(GlobalConstants.SensorIds.pivotFrontId);
+    // public static final TimeOfFlight tofBack =
+    //         new TimeOfFlight(GlobalConstants.SensorIds.pivotBackId);
+    // public static final TimeOfFlight tofFront =
+    //         new TimeOfFlight(GlobalConstants.SensorIds.pivotFrontId);
 
     // distance vs pivot angle
     public static final InterpolatingDoubleTreeMap kMasterSpeakerMap =

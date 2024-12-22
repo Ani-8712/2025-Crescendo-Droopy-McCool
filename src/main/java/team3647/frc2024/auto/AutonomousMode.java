@@ -20,7 +20,7 @@ public class AutonomousMode {
         Elastic.sendAlert(
             new ElasticNotification(
                 NotificationLevel.WARNING, "Unamed Auto!",
-                "One of your autos is Unamed! Object ID: " + this.toString()));
+                "One of your autos is Unamed! Object ID: " + autoCommand.getName()));
     }
 
     private final Command autoCommand;

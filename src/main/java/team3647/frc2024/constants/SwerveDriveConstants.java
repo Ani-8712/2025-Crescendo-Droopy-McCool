@@ -1,6 +1,7 @@
 package team3647.frc2024.constants;
 
-import javax.sound.sampled.Line;
+import org.ironmaple.simulation.drivesims.COTS;
+import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.*;
@@ -19,12 +20,8 @@ import com.ctre.phoenix6.swerve.SwerveModuleConstantsFactory;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.DistanceUnit;
-import edu.wpi.first.units.LinearVelocityUnit;
-import edu.wpi.first.units.UnitBuilder;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.units.measure.MomentOfInertia;
 import team3647.lib.team254.geometry.Translation2d;
 import team3647.lib.team254.swerve.SwerveDriveKinematics;
 import team3647.lib.team254.swerve.SwerveKinematicLimits;
@@ -75,10 +72,10 @@ public class SwerveDriveConstants {
     // config swerve module reversed here, module class doens't reverse for you
 
     // distance between right and left wheels
-    public static final double kTrackWidth = Units.inchesToMeters(19);
+    public static final double kTrackWidth = Units.Inches.of(19).in(Units.Meter);
     // distance between front and back wheels
 
-    public static final double kWheelBase = Units.inchesToMeters(19);
+    public static final double kWheelBase =  Units.Inches.of(19).in(Units.Meter);
     // translations are locations of each module wheel
     // 0 --> ++ --> front left
     // 1 --> +- --> front right
@@ -105,7 +102,7 @@ public class SwerveDriveConstants {
     static {
         kTeleopKinematicLimits.kMaxDriveVelocity = TunerConstants.kSpeedAt12VoltsMps;
         kTeleopKinematicLimits.kMaxDriveAcceleration = defaultAccel;
-        kTeleopKinematicLimits.kMaxSteeringVelocity = Units.degreesToRadians(1500.0);
+        kTeleopKinematicLimits.kMaxSteeringVelocity = Units.Degree.of(1500).in(Units.Radians);
     }
 
     // config conversion factors here for each module. in meters for postiion and
@@ -221,8 +218,8 @@ public class SwerveDriveConstants {
                     kFrontLeftDrive.getDeviceID(),
                     kFrontLeftAbsEncoder.getDeviceID(),
                     kFrontLeftEncoderOffset,
-                    Units.inchesToMeters(kWheelBase / 2.0),
-                    Units.inchesToMeters(kTrackWidth / 2.0),
+                    Units.Inches.of(kWheelBase / 2.0).in(Units.Meters),
+                    Units.Inches.of(kTrackWidth / 2.0).in(Units.Meters),
                     kDriveMotorInvertedLeftSide,
                     kTurnMotorInvertedBoolean);
     public static final SwerveModuleConstants kFrontRightConstants =
@@ -231,8 +228,8 @@ public class SwerveDriveConstants {
                     kFrontRightDrive.getDeviceID(),
                     kFrontRightAbsEncoder.getDeviceID(),
                     kFrontRightEncoderOffset,
-                    Units.inchesToMeters(kWheelBase / 2.0),
-                    Units.inchesToMeters(-kTrackWidth / 2.0),
+                    Units.Inches.of(kWheelBase / 2.0).in(Units.Meters),
+                    Units.Inches.of(-kTrackWidth / 2.0).in(Units.Meters),
                     kDriveMotorInvertedRightSide,
                     kTurnMotorInvertedBoolean);
     public static final SwerveModuleConstants kBackLeftConstants =
@@ -241,8 +238,8 @@ public class SwerveDriveConstants {
                     kBackLeftDrive.getDeviceID(),
                     kBackLeftAbsEncoder.getDeviceID(),
                     kBackLeftEncoderOffset,
-                    Units.inchesToMeters(-kWheelBase / 2.0),
-                    Units.inchesToMeters(kTrackWidth / 2.0),
+                    Units.Inches.of(-kWheelBase / 2.0).in(Units.Meters),
+                    Units.Inches.of(kTrackWidth / 2.0).in(Units.Meters),
                     kDriveMotorInvertedLeftSide,
                     kTurnMotorInvertedBoolean);
     public static final SwerveModuleConstants kBackRightConstants =
@@ -251,8 +248,8 @@ public class SwerveDriveConstants {
                     kBackRightDrive.getDeviceID(),
                     kBackRightAbsEncoder.getDeviceID(),
                     kBackRightEncoderOffset,
-                    Units.inchesToMeters(-kWheelBase / 2.0),
-                    Units.inchesToMeters(-kTrackWidth / 2.0),
+                    Units.Inches.of(-kWheelBase / 2.0).in(Units.Meters),
+                    Units.Inches.of(-kTrackWidth / 2.0).in(Units.Meters),
                     kDriveMotorInvertedRightSide,
                     kTurnMotorInvertedBoolean);
 
@@ -263,6 +260,22 @@ public class SwerveDriveConstants {
 
         System.out.println(error);
     }
+    double driveMOI = 
+        Units.Pound.of(120).in(Units.Kilogram)* 
+        (1/6) * Units.Inch.of(19).in(Units.Meter)*
+        Units.Inch.of(19).in(Units.Meter);
+        
+        
+    public static final DriveTrainSimulationConfig simConfig = DriveTrainSimulationConfig.Default()
+            .withTrackLengthTrackWidth(Units.Inch.of(19), Units.Inches.of(19))
+            .withGyro(COTS.ofPigeon2())
+            .withRobotMass(Units.Pound.of(120))
+            .withSwerveModule(COTS.ofMark4i(
+                DCMotor.getKrakenX60Foc(1), 
+                DCMotor.getFalcon500Foc(1), 
+                COTS.WHEELS.DEFAULT_NEOPRENE_TREAD.cof, 4))
+            .withBumperSize(Units.Inches.of(32), Units.Inch.of(32));
+            
 
     static {
     }

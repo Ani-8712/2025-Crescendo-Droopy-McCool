@@ -19,16 +19,32 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.MassUnit;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Mass;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.drive.RobotDriveBase;
+import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.DoubleSupplier;
+
+import org.dyn4j.collision.narrowphase.FallbackCondition;
+import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.drivesims.GyroSimulation;
+import org.ironmaple.simulation.drivesims.SelfControlledSwerveDriveSimulation;
+import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+import org.ironmaple.simulation.drivesims.SwerveModuleSimulation;
+import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import team3647.frc2024.constants.SwerveDriveConstants;
@@ -36,15 +52,18 @@ import team3647.frc2024.util.ModifiedSignalLogger;
 import team3647.frc2024.util.SwerveFOCRequest;
 import team3647.frc2024.util.VisionMeasurement;
 import team3647.lib.PeriodicSubsystem;
+import team3647.lib.team254.geometry.Translation2d;
 import team3647.lib.team254.swerve.SwerveKinematicLimits;
 import team3647.lib.team254.swerve.SwerveSetpoint;
 import team3647.lib.team254.swerve.SwerveSetpointGenerator;
+import team3647.lib.team9442.AllianceObserver;
 
-public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
+public class SwerveDrive extends SwerveDrivetrain implements AllianceObserver,PeriodicSubsystem {
 
     public final SwerveSetpointGenerator setpointGenerator;
 
     public final SwerveKinematicLimits limits;
+
 
     public final Field2d field = new Field2d();
 
@@ -64,6 +83,12 @@ public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
     private SysIdRoutine m_driveSysIdRoutine;
 
     private SysIdRoutine m_steerSysIdRoutine;
+
+    private final DriveTrainSimulationConfig simConfig;
+
+    private final SelfControlledSwerveDriveSimulation simpleSim;
+
+    public final SwerveDriveSimulation swerveSim;
 
     public static class PeriodicIO {
         // inputs
@@ -113,16 +138,21 @@ public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
             double maxSpeedMpS,
             double maxRotRadPerSec,
             double kDt,
+            DriveTrainSimulationConfig simConfig,
             SwerveModuleConstants... swerveModuleConstants) {
         super(swerveDriveConstants, swerveModuleConstants);
         registerTelemetry(this::setStuff);
+        this.simConfig = simConfig;
         this.maxSpeedMpS = maxSpeedMpS;
         this.maxRotRadPerSec = maxRotRadPerSec;
         this.kDt = kDt;
+        this.swerveSim = new SwerveDriveSimulation(simConfig, new Pose2d(2,2,new Rotation2d()));
 
         this.setpointGenerator = new SwerveSetpointGenerator(SwerveDriveConstants.kDriveKinematics);
 
         this.limits = SwerveDriveConstants.kTeleopKinematicLimits;
+
+        this.simpleSim = new SelfControlledSwerveDriveSimulation(swerveSim);
 
         this.m_driveSysIdRoutine =
                 new SysIdRoutine(
@@ -180,7 +210,14 @@ public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
               return false;
             },
             this // Reference to this subsystem to set requirements
-    );
+        );
+        
+        
+
+
+            
+
+
     }
 
     public void zeroPitch() {
@@ -209,6 +246,8 @@ public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
     public void writePeriodicOutputs() {
         setisAccel();
         this.setControl(periodicIO.masterRequest);
+        simpleSim.periodic();
+        Logger.recordOutput("simRobot/drive", simpleSim.getActualPoseInSimulationWorld());
         // SmartDashboard.putNumber("heading", getRawHeading());
     }
 
@@ -331,12 +370,15 @@ public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
     }
 
     public double getRawHeading() {
+        
         return periodicIO.rawHeading;
     }
 
     @AutoLogOutput
     public Pose2d getOdoPose() {
-        return periodicIO.pose;
+        
+        return RobotBase.isReal()? periodicIO.pose : simpleSim.getOdometryEstimatedPose();
+        
     }
 
     public void setStuff(SwerveDriveState state) {
@@ -411,6 +453,16 @@ public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
         //             data.timestamp
         //         });
         addVisionMeasurement(data.pose, data.timestamp, data.stdDevs);
+        if(RobotBase.isSimulation()){
+            simpleSim.addVisionEstimation(data.pose, data.timestamp, data.stdDevs);
+            DriverStation.reportError("ADDEDDATAADDEDDATAADDEDDATAADDEDDATA", false);
+        }
+    }
+
+    @Override
+    public void onAllianceFound(Alliance color) {
+        var rot = color == Alliance.Red? Rotation2d.fromRadians(2*Math.PI) : Rotation2d.fromRadians(0);
+        setOperatorPerspectiveForward(rot);
     }
 
     @Override
@@ -423,6 +475,8 @@ public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
     }
 
     public void drive(double x, double y, double rotation) {
+        
+        
         if (!periodicIO.good) {
             reset();
             return;
@@ -468,6 +522,15 @@ public class SwerveDrive extends SwerveDrivetrain implements PeriodicSubsystem {
                 .withVelocityY(setpoint.mChassisSpeeds.vyMetersPerSecond)
                 .withRotationalRate(setpoint.mChassisSpeeds.omegaRadiansPerSecond);
         periodicIO.masterRequest = periodicIO.robotCentric;
+        if(RobotBase.isSimulation()){
+            simpleSim.runChassisSpeeds(
+                setpoint.mChassisSpeeds.real(), 
+                new Translation2d().real(), false, true);
+        }
+    }
+
+    public void resetSimOdo(){
+        simpleSim.resetOdometry(simpleSim.getActualPoseInSimulationWorld());
     }
 
     public void driveFieldOriented(DoubleSupplier x, double y, double rotation) {
