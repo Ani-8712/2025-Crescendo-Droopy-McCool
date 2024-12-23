@@ -248,6 +248,7 @@ public class SwerveDrive extends SwerveDrivetrain implements AllianceObserver,Pe
         this.setControl(periodicIO.masterRequest);
         simpleSim.periodic();
         Logger.recordOutput("simRobot/drive", simpleSim.getActualPoseInSimulationWorld());
+        Logger.recordOutput("dist", getRealSimPose().minus(getOdoPose()).getTranslation().getNorm());
         // SmartDashboard.putNumber("heading", getRawHeading());
     }
 
@@ -263,6 +264,10 @@ public class SwerveDrive extends SwerveDrivetrain implements AllianceObserver,Pe
         Logger.recordOutput("Robot/Under stage", underStage());
         readPeriodicInputs();
         writePeriodicOutputs();
+    }
+
+    public Pose2d getRealSimPose(){
+        return simpleSim.getActualPoseInSimulationWorld();
     }
 
     public void setisAccel() {
@@ -455,7 +460,7 @@ public class SwerveDrive extends SwerveDrivetrain implements AllianceObserver,Pe
         addVisionMeasurement(data.pose, data.timestamp, data.stdDevs);
         if(RobotBase.isSimulation()){
             simpleSim.addVisionEstimation(data.pose, data.timestamp, data.stdDevs);
-            DriverStation.reportError("ADDEDDATAADDEDDATAADDEDDATAADDEDDATA", false);
+            // DriverStation.reportError("ADDEDDATAADDEDDATAADDEDDATAADDEDDATA", false);
         }
     }
 

@@ -168,7 +168,8 @@ public class Robot extends LoggedRobot {
     @Override
     public void simulationPeriodic() {
         SimulatedArena.getInstance().simulationPeriodic();
-        robotContainer.photonSim.system.update(robotContainer.swerve.getOdoPose());
-
+        robotContainer.photonSim.system.update(robotContainer.swerve.getRealSimPose());
+        // Logger.recordOutput("simvisionpose", robotContainer.photonSim.system.getRobotPose());
+        Logger.recordOutput("simRobot/vision", robotContainer.photonSim.system.getDebugField().getRobotPose());
     }
 }

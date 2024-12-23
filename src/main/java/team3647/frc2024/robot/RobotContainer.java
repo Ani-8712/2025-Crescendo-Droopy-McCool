@@ -491,7 +491,7 @@ public class RobotContainer {
     public final AprilTagPhotonVision backRight =
             new AprilTagPhotonVision(VisionConstants.backRight, VisionConstants.robotToBackRight);
 
-    public final PhotonSim photonSim = new PhotonSim(backLeft, backRight);
+    
 
     public final AprilTagPhotonVision left =
             new AprilTagPhotonVision(VisionConstants.left, VisionConstants.robotToLeft);
@@ -503,6 +503,7 @@ public class RobotContainer {
             new AprilTagPhotonVision(VisionConstants.zoom, VisionConstants.robotToZoom)
                     .withPriority(true);
 
+    public final PhotonSim photonSim = new PhotonSim(backLeft, backRight, left, right, zoom);
     public AllianceChecker allianceChecker = new AllianceChecker();
 
     private final VisionController visionController =

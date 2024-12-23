@@ -21,20 +21,29 @@ public class PhotonSim {
     List<VisionTargetSim> targets;
     AprilTagFieldLayout layout;
 
-    AprilTagPhotonVision backLeft,backRight; 
+    AprilTagPhotonVision backLeft,backRight,left,right,zoom; 
     
     
-    public PhotonSim(AprilTagPhotonVision backleft, AprilTagPhotonVision backRight){
+    public PhotonSim(AprilTagPhotonVision backleft, AprilTagPhotonVision backRight, AprilTagPhotonVision left, AprilTagPhotonVision right, AprilTagPhotonVision zoom){
+        this.backLeft = backleft;
+        this.backRight = backRight;
+        this.left = left;
+        this.right = right;
+        this.zoom = zoom;
         this.layout = AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo);
         this.system = new VisionSystemSim("main");
         this.targets = new ArrayList<VisionTargetSim>();
+
         addTargets();
+        addCams();
+
         VisionTargetSim[] arr = new VisionTargetSim[targets.size()];
         this.system.addVisionTargets(targets.toArray(arr));
-        system.addAprilTags(layout);
 
-        this.backLeft = backleft;
-        this.backRight = backRight;
+        system.addAprilTags(layout);
+            
+        
+
     }
 
     public void addTargets(){
@@ -49,11 +58,15 @@ public class PhotonSim {
     public void addCams(){
         var camProps = new SimCameraProperties();
         camProps.setCalibration(1280, 720, Rotation2d.fromDegrees(120));
-        camProps.setCalibError(0.25, 0.08);
+        camProps.setCalibError(0, 0);
         camProps.setFPS(50);
         camProps.setAvgLatencyMs(35);
         camProps.setLatencyStdDevMs(5);
+        
         system.addCamera(new PhotonCameraSim(backLeft, camProps), backLeft.robotToCam);
         system.addCamera(new PhotonCameraSim(backRight, camProps), backRight.robotToCam);
+        system.addCamera(new PhotonCameraSim(left, camProps), left.robotToCam);
+        system.addCamera(new PhotonCameraSim(right, camProps), right.robotToCam);
+        // system.addCamera(new PhotonCameraSim(zoom, camProps), zoom.robotToCam);
     }
 }
